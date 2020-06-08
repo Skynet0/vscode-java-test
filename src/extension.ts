@@ -72,11 +72,24 @@ async function doActivate(_operationId: string, context: ExtensionContext): Prom
     const extension: Extension<any> | undefined = extensions.getExtension('redhat.java');
     if (extension && extension.isActive) {
         const extensionApi: any = extension.exports;
-        if (extensionApi && extensionApi.onDidClasspathUpdate) {
+        if (!extensionApi) {
+            return;
+        }
+        if (extensionApi.onDidClasspathUpdate) {
             const onDidClasspathUpdate: Event<Uri> = extensionApi.onDidClasspathUpdate;
             context.subscriptions.push(onDidClasspathUpdate(async () => {
                 await testFileWatcher.registerListeners(true /*enableDebounce*/);
             }));
         }
+        if (extensionApi.onDidChangeServerMode) {
+            const onDidChangeServerMode: Event<string> = extensionApi.onDidChangeServerMode;
+            context.subscriptions.push(onDidChangeServerMode(async (mode: string) => {
+                serverMode = mode;
+                testExplorer.refresh();
+                testCodeLensController.refresh();
+            }));
+        }
     }
 }
+
+export let serverMode: string = '';

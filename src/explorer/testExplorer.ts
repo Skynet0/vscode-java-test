@@ -9,6 +9,7 @@ import { ITestResult, TestStatus } from '../runners/models';
 import { testFileWatcher } from '../testFileWatcher';
 import { testItemModel } from '../testItemModel';
 import { testResultManager } from '../testResultManager';
+import { serverMode } from '../extension';
 
 export class TestExplorer implements TreeDataProvider<ITestItem>, Disposable {
     public readonly testExplorerViewId: string = 'testExplorer';
@@ -24,6 +25,18 @@ export class TestExplorer implements TreeDataProvider<ITestItem>, Disposable {
     }
 
     public getTreeItem(element: ITestItem): TreeItem | Thenable<TreeItem> {
+        if (element.id === 'syntaxMode') {
+            return {
+                label: element.displayName,
+                collapsibleState: TreeItemCollapsibleState.None,
+                command: {
+                    command: 'java.server.mode.switch',
+                    title: 'Switch to Standard mode',
+                },
+                contextValue: 'NON_TEST_NODE',
+            };
+        }
+
         return {
             label: element.displayName,
             collapsibleState: this.resolveCollapsibleState(element),
@@ -34,6 +47,24 @@ export class TestExplorer implements TreeDataProvider<ITestItem>, Disposable {
     }
 
     public async getChildren(element?: ITestItem): Promise<ITestItem[]> {
+        if (serverMode !== 'Standard') {
+            return [
+                {
+                    id: 'syntaxMode',
+                    displayName: 'Click to switch to Standard Mode...',
+                    fullName: 'syntaxMode',
+                    kind: TestKind.None,
+                    project: '',
+                    level: TestLevel.Folder,
+                    paramTypes: [],
+                    location: {
+                        uri: '',
+                        range: new Range(0, 0, 0, 0),
+                    },
+                    children: undefined,
+                },
+            ];
+        }
         let nodes: ITestItem[] = [];
         if (!element) {
             nodes = this.getWorkspaceFolders();
